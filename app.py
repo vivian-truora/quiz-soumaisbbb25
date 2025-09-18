@@ -1,13 +1,29 @@
 import streamlit as st
 import pandas as pd
 import datetime
+import gspread
+from google.oauth2.service_account import Credentials
 
+# ========== CONFIG STREAMLIT ==========
 st.set_page_config(page_title="Quiz SOU+", layout="centered")
-
 st.title("🎮 Descubra seu perfil SOU+ BigBang Rio")
 st.write("Responda as perguntas e descubra qual força te move!")
 
 nome = st.text_input("Digite seu nome")
+
+# ========== CONFIG GOOGLE SHEETS ==========
+SHEET_ID = "1xgQBzO8BY86iys5AIE85wxqlW7Ug7ThfYAR3dPTNcEw"
+SHEET_NAME = "Respostas"  # ajuste se o nome da aba for diferente
+
+scope = ["https://www.googleapis.com/auth/spreadsheets", 
+         "https://www.googleapis.com/auth/drive"]
+
+credentials = Credentials.from_service_account_file(
+    "credenciais.json", scopes=scope
+)
+gc = gspread.authorize(credentials)
+sh = gc.open_by_key(SHEET_ID)
+worksheet = sh.worksheet(SHEET_NAME)
 
 # Lista de perguntas e alternativas associadas aos perfis
 perguntas_opcoes = [
@@ -75,16 +91,17 @@ if st.button("Ver meu perfil"):
         percentual = round((valor / total) * 100)
         st.write(f"- {tipo}: {percentual}%")
 
+     # ========== SALVAR NO GOOGLE SHEETS ==========
     if nome:
-        data = pd.DataFrame([{
-            "nome": nome,
-            "data": datetime.datetime.now(),
-            **pontuacoes
-        }])
-        try:
-            existentes = pd.read_csv("respostas.csv")
-            data = pd.concat([existentes, data], ignore_index=True)
-        except:
-            pass
-        data.to_csv("respostas.csv", index=False)
+        nova_linha = [
+            nome,
+            datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            pontuacoes["Geek"],
+            pontuacoes["Aventura"],
+            pontuacoes["Conexão"],
+            pontuacoes["Arte"],
+            perfil_principal
+        ]
+        worksheet.append_row(nova_linha)
+        st.success("✅ Resposta salva no Google Sheets!")
 
