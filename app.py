@@ -28,8 +28,6 @@ SHEET_NAME = "Respostas SOU+ BBB25"  # ajuste se o nome da aba for diferente
 scope = ["https://www.googleapis.com/auth/spreadsheets", 
          "https://www.googleapis.com/auth/drive"]
 
-import json
-
 creds_dict = st.secrets["gcp_service_account"]
 credentials = Credentials.from_service_account_info(creds_dict, scopes=scope)
 
