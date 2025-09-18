@@ -1,97 +1,182 @@
 import streamlit as st
 import pandas as pd
 import datetime
+import gspread
+from oauth2client.service_account import ServiceAccountCredentials
 
-st.set_page_config(page_title="Quiz SOU+", layout="centered")
+st.set_page_config(page_title="Quiz SOU+ Big Bang", layout="centered")
+st.title("🎮 Descubra seu perfil SOU+ Big Bang Rio")
 
-# Novo texto de introdução
-st.title("SOU+ é a Energia Que Move Cada Um de Nós")
-st.write("""
-Todos nós temos algo especial que nos move: uma forma única de pensar, agir ou se conectar.\n
-Cada cor dá visibilidade às diferentes forças que compõem cada pessoa.\n
-O SOU+ é a nossa forma de mapear essas forças, de um jeito leve, e integrado a toda experiência do Big Bang deste ano.\n
-E aí? Prontos para descobrir o seu perfil SOU+?\n
-Quem é você no game?
+st.markdown("""
+**SOU+ é a Energia Que Move Cada Um de Nós**
+
+Todos nós temos algo especial que nos move: uma forma única de pensar, agir ou se conectar.  
+Cada cor dá visibilidade às diferentes forças que compõem cada pessoa.  
+
+O SOU+ é a nossa forma de mapear essas forças, de um jeito leve, e integrado a toda experiência do Big Bang deste ano.  
+**E aí? Pronto(a) para descobrir o seu perfil SOU+?**
 """)
 
 nome = st.text_input("Digite seu nome")
 
-# Dicionário de alternativas para perfis (exemplo com 3 perguntas)
-tipo_por_resposta = {
-    # Pergunta 1
-    "Analisa e planeja a solução": "Geek",
-    "Testa na prática e ajusta no caminho": "Aventura",
-    "Pede ajuda ou troca ideias": "Conexão",
-    "Busca uma forma criativa e diferente de resolver": "Arte",
-
-    # Pergunta 2
-    "Matemática ou ciências exatas": "Geek",
-    "Educação física": "Aventura",
-    "História ou sociologia": "Conexão",
-    "Artes ou literatura": "Arte",
-
-    # Pergunta 3
-    "Dados e lógica": "Geek",
-    "Intuição e impulso": "Aventura",
-    "Conversar e alinhar com pessoas": "Conexão",
-    "Imaginar cenários criativos": "Arte",
-}
-
-# Lista de perguntas (exemplo)
+# Perguntas e opções
 perguntas = [
     ("Quando aparece um desafio novo, você:", [
-        "Analisa e planeja a solução",
-        "Testa na prática e ajusta no caminho",
-        "Pede ajuda ou troca ideias",
-        "Busca uma forma criativa e diferente de resolver"
-    ]),
+        ("Analisa e planeja a solução", "Geek"),
+        ("Testa na prática e ajusta no caminho", "Aventura"),
+        ("Pede ajuda ou troca ideias", "Conexão"),
+        ("Busca uma forma criativa e diferente de resolver", "Arte")]),
+
     ("Qual dessas matérias da escola mais te atraía?", [
-        "Matemática ou ciências exatas",
-        "Educação física",
-        "História ou sociologia",
-        "Artes ou literatura"
-    ]),
+        ("Matemática ou ciências exatas", "Geek"),
+        ("Educação física", "Aventura"),
+        ("História ou sociologia", "Conexão"),
+        ("Artes ou literatura", "Arte")]),
+
     ("Para tomar uma decisão, você prefere:", [
-        "Dados e lógica",
-        "Intuição e impulso",
-        "Conversar e alinhar com pessoas",
-        "Imaginar cenários criativos"
-    ])
+        ("Dados e lógica", "Geek"),
+        ("Intuição e impulso", "Aventura"),
+        ("Conversar e alinhar com pessoas", "Conexão"),
+        ("Imaginar cenários criativos", "Arte")]),
+
+    ("Diante de uma tarefa difícil, você:", [
+        ("Divide em etapas lógicas", "Geek"),
+        ("Vai tentando até dar certo", "Aventura"),
+        ("Busca parceria para compartilhar", "Conexão"),
+        ("Reinventa o jeito de fazer", "Arte")]),
+
+    ("Seu maior talento está em:", [
+        ("Resolver problemas", "Geek"),
+        ("Superar desafios físicos", "Aventura"),
+        ("Criar laços fortes com pessoas", "Conexão"),
+        ("Ter ideias originais", "Arte")]),
+
+    ("Se fosse jogar um game, você escolheria:", [
+        ("De estratégia/puzzle", "Geek"),
+        ("De corrida/ação", "Aventura"),
+        ("Multiplayer cooperativo", "Conexão"),
+        ("Criativo/sandbox", "Arte")]),
+
+    ("Num imprevisto, você costuma:", [
+        ("Calcular opções antes de agir", "Geek"),
+        ("Agir rápido e corrigir depois", "Aventura"),
+        ("Procurar apoio das pessoas", "Conexão"),
+        ("Improvisar com criatividade", "Arte")]),
+
+    ("Quando tem tempo livre, você prefere:", [
+        ("Ler ou estudar algo novo", "Geek"),
+        ("Praticar um esporte", "Aventura"),
+        ("Sair com amigos/família", "Conexão"),
+        ("Ir a um show, cinema ou oficina criativa", "Arte")]),
+
+    ("Seu hobby ideal é:", [
+        ("Montar quebra-cabeças, xadrez ou programação", "Geek"),
+        ("Surf, corrida ou trekking", "Aventura"),
+        ("Jantar com amigos, jogos de grupo", "Conexão"),
+        ("Pintura, música ou dança", "Arte")]),
+
+    ("Se tivesse que montar uma barraca de camping, você:", [
+        ("Leria o manual e organizaria", "Geek"),
+        ("Montaria tentando na prática", "Aventura"),
+        ("Chamaria amigos para montar juntos", "Conexão"),
+        ("Improvisaria com o que tivesse", "Arte")]),
+
+    ("Em uma roda de conversa, você costuma ser:", [
+        ("O que faz perguntas inteligentes", "Geek"),
+        ("O que conta histórias de aventuras", "Aventura"),
+        ("O que escuta e conecta as pessoas", "Conexão"),
+        ("O que faz piadas e anima", "Arte")]),
+
+    ("O que mais te dá energia em um evento como o Big Bang?", [
+        ("Os desafios que exigem raciocínio", "Geek"),
+        ("As atividades esportivas", "Aventura"),
+        ("Estar junto do time", "Conexão"),
+        ("As expressões culturais e artísticas", "Arte")]),
+
+    ("Em um sorteio de atividade, você adoraria pegar:", [
+        ("Um quiz de lógica", "Geek"),
+        ("Uma corrida ou prova física", "Aventura"),
+        ("Um jogo de colaboração", "Conexão"),
+        ("Uma competição de dança", "Arte")]),
+
+    ("O que mais te deixa satisfeito ao final de uma atividade?", [
+        ("Ter resolvido de forma inteligente", "Geek"),
+        ("Ter dado o máximo de energia", "Aventura"),
+        ("Ter unido o grupo", "Conexão"),
+        ("Ter criado algo memorável", "Arte")]),
+
+    ("Quando conhece alguém novo, você:", [
+        ("Faz perguntas técnicas ou curiosas", "Geek"),
+        ("Propõe uma atividade ou esporte", "Aventura"),
+        ("Procura algo em comum", "Conexão"),
+        ("Usa humor ou criatividade", "Arte")]),
+
+    ("O que você mais gostaria de deixar marcado no Big Bang 2025?", [
+        ("Uma solução inteligente num desafio", "Geek"),
+        ("Uma vitória esportiva", "Aventura"),
+        ("Uma amizade verdadeira", "Conexão"),
+        ("Uma apresentação memorável", "Arte")])
 ]
 
 pontuacoes = {"Geek": 0, "Aventura": 0, "Conexão": 0, "Arte": 0}
 
-for i, (pergunta, alternativas) in enumerate(perguntas):
-    resposta = st.radio(pergunta, alternativas, key=f"pergunta_{i}")
-    tipo = tipo_por_resposta[resposta]
-    pontuacoes[tipo] += 1
+for idx, (pergunta, opcoes) in enumerate(perguntas):
+    escolha = st.radio(pergunta, [txt for txt, _ in opcoes], key=f"pergunta_{idx}")
+    for txt, perfil in opcoes:
+        if escolha == txt:
+            pontuacoes[perfil] += 1
+            break
+
+# Empate
+max_score = max(pontuacoes.values())
+empatados = [p for p, v in pontuacoes.items() if v == max_score]
+if len(empatados) > 1:
+    desempate = st.radio("Desempate: o que mais representa você neste momento?", [
+        "Prefiro resolver com lógica e planejamento",
+        "Prefiro ação e movimento",
+        "Prefiro estar junto das pessoas",
+        "Prefiro me expressar de forma criativa"
+    ])
+    if "lógica" in desempate:
+        pontuacoes["Geek"] += 1
+    elif "ação" in desempate:
+        pontuacoes["Aventura"] += 1
+    elif "pessoas" in desempate:
+        pontuacoes["Conexão"] += 1
+    elif "criativa" in desempate:
+        pontuacoes["Arte"] += 1
 
 if st.button("Ver meu perfil"):
-    perfil_principal = max(pontuacoes, key=pontuacoes.get)
     total = sum(pontuacoes.values())
+    porcentagens = {p: round((v/total)*100) for p, v in pontuacoes.items()}
+    perfil_principal = max(pontuacoes, key=pontuacoes.get)
 
-    descricao = {
+    descricoes = {
         "Geek": "💙 Sua cor é o Azul\n\nO cérebro do time. Analítico, curioso, resolve problemas e domina o conhecimento.",
         "Aventura": "💚 Sua cor é o Verde\n\nO desbravador. Ama movimento, desafios físicos e ambientes inesperados.",
-        "Conexão": "🖧 Sua cor é o Rosa\n\nA base do time. Une pessoas, cuida do grupo e garante colaboração.",
+        "Conexão": "🩷 Sua cor é o Rosa\n\nA base do time. Une pessoas, cuida do grupo e garante colaboração.",
         "Arte": "💛 Amarelo\n\nA alma criativa. Expressivo, contagia com energia, empolgação e dá ritmo às experiências."
     }
 
-    emoji = {"Geek": "💙", "Aventura": "💚", "Conexão": "🖧", "Arte": "💛"}[perfil_principal]
+    st.subheader(f"Seu perfil principal é: SOU+ {perfil_principal}")
+    st.markdown(descricoes[perfil_principal])
+    st.write("### Seus percentuais")
+    st.write(porcentagens)
 
-    st.subheader(f"SOU+ {perfil_principal} {emoji}")
-    st.write(descricao[perfil_principal])
-    st.write("Distribuição:")
+    # Salvar no Google Sheets
+    try:
+        escopo = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+        credenciais = ServiceAccountCredentials.from_json_keyfile_name("credenciais.json", escopo)
+        cliente = gspread.authorize(credenciais)
+        planilha = cliente.open("Respostas SOU+ BBB25")
+        aba = planilha.sheet1
+        aba.append_row([
+            nome,
+            str(datetime.datetime.now()),
+            perfil_principal,
+            porcentagens["Geek"], porcentagens["Aventura"], porcentagens["Conexão"], porcentagens["Arte"]
+        ])
+        st.success("Respostas salvas com sucesso!")
+    except Exception as e:
+        st.warning(f"Erro ao salvar na planilha: {e}")
 
-    for tipo, valor in pontuacoes.items():
-        percentual = round((valor / total) * 100)
-        st.write(f"- {tipo}: {percentual}%")
-
-    if nome:
-        data = pd.DataFrame([{ "nome": nome, "data": datetime.datetime.now(), **pontuacoes }])
-        try:
-            existentes = pd.read_csv("respostas.csv")
-            data = pd.concat([existentes, data], ignore_index=True)
-        except:
-            pass
-        data.to_csv("respostas.csv", index=False)
