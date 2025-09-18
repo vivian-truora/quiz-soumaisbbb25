@@ -2,8 +2,10 @@ import streamlit as st
 import pandas as pd
 import datetime
 import gspread
+import random
 from oauth2client.service_account import ServiceAccountCredentials
 
+# ------------------ CONFIGURAÇÃO STREAMLIT ------------------
 st.set_page_config(page_title="Quiz SOU+ Big Bang", layout="centered")
 st.title("🎮 Descubra seu perfil SOU+ Big Bang Rio")
 
@@ -19,7 +21,7 @@ O SOU+ é a nossa forma de mapear essas forças, de um jeito leve, e integrado a
 
 nome = st.text_input("Digite seu nome")
 
-# Perguntas e opções
+# ------------------ PERGUNTAS ------------------
 perguntas = [
     ("Quando aparece um desafio novo, você:", [
         ("Analisa e planeja a solução", "Geek"),
@@ -109,34 +111,37 @@ perguntas = [
         ("Faz perguntas técnicas ou curiosas", "Geek"),
         ("Propõe uma atividade ou esporte", "Aventura"),
         ("Procura algo em comum", "Conexão"),
-        ("Usa humor ou criatividade", "Arte")]),
-
-    ("O que você mais gostaria de deixar marcado no Big Bang 2025?", [
-        ("Uma solução inteligente num desafio", "Geek"),
-        ("Uma vitória esportiva", "Aventura"),
-        ("Uma amizade verdadeira", "Conexão"),
-        ("Uma apresentação memorável", "Arte")])
+        ("Usa humor ou criatividade", "Arte")])
 ]
 
+# Embaralhar alternativas de cada pergunta
+for i in range(len(perguntas)):
+    random.shuffle(perguntas[i][1])
+
 pontuacoes = {"Geek": 0, "Aventura": 0, "Conexão": 0, "Arte": 0}
+respostas = []
 
+# Interface com as perguntas
 for idx, (pergunta, opcoes) in enumerate(perguntas):
-    escolha = st.radio(pergunta, [txt for txt, _ in opcoes], key=f"pergunta_{idx}")
-    for txt, perfil in opcoes:
-        if escolha == txt:
-            pontuacoes[perfil] += 1
-            break
+    alternativa = st.radio(pergunta, [op[0] for op in opcoes], key=f"pergunta_{idx}")
+    perfil = [p for txt, p in opcoes if txt == alternativa][0]
+    pontuacoes[perfil] += 1
+    respostas.append((pergunta, alternativa))
 
-# Empate
+# Verifica empate
+total = sum(pontuacoes.values())
 max_score = max(pontuacoes.values())
 empatados = [p for p, v in pontuacoes.items() if v == max_score]
+
 if len(empatados) > 1:
-    desempate = st.radio("Desempate: o que mais representa você neste momento?", [
+    st.markdown("### 🤔 Houve um empate!")
+    desempate = st.radio("Escolha a alternativa que mais representa você neste momento:", [
         "Prefiro resolver com lógica e planejamento",
         "Prefiro ação e movimento",
         "Prefiro estar junto das pessoas",
         "Prefiro me expressar de forma criativa"
-    ])
+    ], key="desempate")
+
     if "lógica" in desempate:
         pontuacoes["Geek"] += 1
     elif "ação" in desempate:
@@ -148,7 +153,7 @@ if len(empatados) > 1:
 
 if st.button("Ver meu perfil"):
     total = sum(pontuacoes.values())
-    porcentagens = {p: round((v/total)*100) for p, v in pontuacoes.items()}
+    porcentagens = {p: round((v/total)*100) for p,v in pontuacoes.items()}
     perfil_principal = max(pontuacoes, key=pontuacoes.get)
 
     descricoes = {
@@ -160,13 +165,14 @@ if st.button("Ver meu perfil"):
 
     st.subheader(f"Seu perfil principal é: SOU+ {perfil_principal}")
     st.markdown(descricoes[perfil_principal])
-    st.write("### Seus percentuais")
-    st.write(porcentagens)
 
-    # Salvar no Google Sheets
+    st.write("### Seus percentuais")
+    st.write(pd.DataFrame([porcentagens]))
+
+    # Google Sheets - salvar dados
     try:
         escopo = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-        credenciais = ServiceAccountCredentials.from_json_keyfile_name("credenciais.json", escopo)
+        credenciais = ServiceAccountCredentials.from_json_keyfile_dict(st.secrets["gcp_service_account"], escopo)
         cliente = gspread.authorize(credenciais)
         planilha = cliente.open("Respostas SOU+ BBB25")
         aba = planilha.sheet1
@@ -176,7 +182,5 @@ if st.button("Ver meu perfil"):
             perfil_principal,
             porcentagens["Geek"], porcentagens["Aventura"], porcentagens["Conexão"], porcentagens["Arte"]
         ])
-        st.success("Respostas salvas com sucesso!")
     except Exception as e:
         st.warning(f"Erro ao salvar na planilha: {e}")
-
