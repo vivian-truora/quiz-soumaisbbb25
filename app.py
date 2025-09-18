@@ -28,9 +28,11 @@ SHEET_NAME = "Respostas SOU+ BBB25"  # ajuste se o nome da aba for diferente
 scope = ["https://www.googleapis.com/auth/spreadsheets", 
          "https://www.googleapis.com/auth/drive"]
 
-credentials = Credentials.from_service_account_file(
-    "credenciais.json", scopes=scope
-)
+import json
+
+creds_dict = st.secrets["gcp_service_account"]
+credentials = Credentials.from_service_account_info(creds_dict, scopes=scope)
+
 gc = gspread.authorize(credentials)
 sh = gc.open_by_key("1xgQBzO8BY86iys5AIE85wxqlW7Ug7ThfYAR3dPTNcEw")
 worksheet = sh.worksheet("Respostas SOU+ BBB25")
