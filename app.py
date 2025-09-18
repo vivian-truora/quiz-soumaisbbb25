@@ -32,8 +32,8 @@ credentials = Credentials.from_service_account_file(
     "credenciais.json", scopes=scope
 )
 gc = gspread.authorize(credentials)
-sh = gc.open_by_key(SHEET_ID)
-worksheet = sh.worksheet(SHEET_NAME)
+sh = gc.open_by_key(1xgQBzO8BY86iys5AIE85wxqlW7Ug7ThfYAR3dPTNcEw)
+worksheet = sh.worksheet(Respostas SOU+ BBB25)
 
 # Lista de perguntas e alternativas associadas aos perfis
 perguntas_opcoes = [
