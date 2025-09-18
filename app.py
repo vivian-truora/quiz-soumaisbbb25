@@ -7,13 +7,23 @@ from google.oauth2.service_account import Credentials
 # ========== CONFIG STREAMLIT ==========
 st.set_page_config(page_title="Quiz SOU+", layout="centered")
 st.title("🎮 Descubra seu perfil SOU+ BigBang Rio")
-st.write("Responda as perguntas e descubra qual força te move!")
+st.markdown("""
+**SOU+ é a Energia Que Move Cada Um de Nós**
+
+
+Todos nós temos algo especial que nos move: uma forma única de pensar, agir ou se conectar.
+Cada cor dá visibilidade às diferentes forças que compõem cada pessoa.
+
+
+O SOU+ é a nossa forma de mapear essas forças, de um jeito leve, e integrado a toda experiência do Big Bang deste ano.
+**E aí? Pronto(a) para descobrir o seu perfil SOU+?**
+""")
 
 nome = st.text_input("Digite seu nome")
 
 # ========== CONFIG GOOGLE SHEETS ==========
 SHEET_ID = "1xgQBzO8BY86iys5AIE85wxqlW7Ug7ThfYAR3dPTNcEw"
-SHEET_NAME = "Respostas"  # ajuste se o nome da aba for diferente
+SHEET_NAME = "Respostas SOU+ BBB25"  # ajuste se o nome da aba for diferente
 
 scope = ["https://www.googleapis.com/auth/spreadsheets", 
          "https://www.googleapis.com/auth/drive"]
